@@ -2,7 +2,7 @@
 Algorand Mass Arc19 Asset Minter
 
 ## Disclaimer
-* This tool is provided as is. It is your's responsibility to check everything before minting.
+* This tool is provided as is. It is your responsibility to check everything before minting.
 * I strongly suggest to mint initial test batch on testnet to make sure the tool is working properly.
 * The tool only works with Pinata and therefore uses `template-ipfs://{ipfscid:0:dag-pb:reserve:sha2-256}` ARC19 template that is compatibile with CID0 Pinata provides.
 
@@ -11,7 +11,7 @@ Algorand Mass Arc19 Asset Minter
 * Visual Studio Code 
 
 ## Installation
-Once Node and VS Code is installed, simply run below command:
+Once Node and VS Code are installed, simply run below command:
 ```bash
 $ npm install
 ```
@@ -26,7 +26,18 @@ There are several things to configure:
   * MAIN_ACCOUNT_MNEMONIC - your account mnemonic (each word is space separated).
   * MAIN_ACCOUNT_ADDRESS - your account address.
   * PINATA_TOKEN - your Pinata JWT token. You can get it from [Pinata API Keys page](https://app.pinata.cloud/keys).
-  * noPinRun - set to true to mint all assets by using creators address as reserve address.
-  * dryRun - only outputs to console. Handy to check of everything is working fine.
+  * noPinRun - set to true to mint all assets by using creator's address as reserve address.
+  * dryRun - only outputs to console. Handy to check if everything is working fine.
   * assetsCount - total assets count to be minted. Used to generate sequence numbers of equal length (000001, 000002, 010000, etc.).
-  * assetQuantity - normally set to 1 to allow mintin 1/1 assets.
+  * assetQuantity - normally set to 1 to allow minting 1/1 assets.
+  
+All your images will have to be copied to assetsImages folder and need to have associated arc69 json file (check the sample attached).
+
+The tool will iterate through assetsImages files and attempt to pin each image to Pinata.
+
+Next after obtaining a valid CID it will attempt to mint an asset using that CID and json file arc69 metadata.
+
+If you have any problems, feel free to get in touch with me.
+
+Pull requests are welcome.
+
