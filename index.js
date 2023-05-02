@@ -26,9 +26,9 @@ const PINATA_TOKEN = ""
 const WEB3STORAGE_TOKEN = ""
 
 // does not pin uses creators address as reserve
-let noPinRun = false;
+let noPinRun = true;
 // does not mint just logs output
-let dryRun = false;
+let dryRun = true;
 
 let assetsCount = 9000;
 let assetQuantity = 1;
