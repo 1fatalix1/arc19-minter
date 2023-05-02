@@ -14,7 +14,8 @@ const INDEXER_PORT_TESTNET=443;
 const ASSET_NAME = "R4V3N";
 const ASSET_UNIT_NAME = "RVT";
 
-const ARC19_TEMPLATE = "template-ipfs://{ipfscid:0:dag-pb:reserve:sha2-256}"
+const ARC19_TEMPLATE_PINATA = "template-ipfs://{ipfscid:0:dag-pb:reserve:sha2-256}"
+const ARC19_TEMPLATE_WEB3STORAGE = "template-ipfs://{ipfscid:1:raw:reserve:sha2-256}"
 
 module.exports = {
     NODE_TOKEN,
@@ -31,5 +32,6 @@ module.exports = {
     INDEXER_PORT_TESTNET,
     ASSET_NAME,
     ASSET_UNIT_NAME,
-    ARC19_TEMPLATE,
+    ARC19_TEMPLATE_PINATA,
+    ARC19_TEMPLATE_WEB3STORAGE,
 }

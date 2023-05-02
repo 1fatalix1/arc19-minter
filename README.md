@@ -4,7 +4,8 @@ Algorand Mass Arc19 Asset Minter
 ## Disclaimer
 * This tool is provided as is. It is your responsibility to check everything before minting.
 * I strongly suggest to mint initial test batch on testnet to make sure the tool is working properly.
-* The tool only works with Pinata and therefore uses `template-ipfs://{ipfscid:0:dag-pb:reserve:sha2-256}` ARC19 template that is compatibile with CID0 Pinata provides.
+* The tool works with Pinata and therefore uses `template-ipfs://{ipfscid:0:dag-pb:reserve:sha2-256}` ARC19 template that is compatibile with CID0 Pinata provides.
+* The tool works with web3.storage and therefore uses `template-ipfs://{ipfscid:1:raw:reserve:sha2-256}` ARC19 template that is compatibile with CID1 web3.storage provides.
 
 ## You will need
 * Node
@@ -25,7 +26,9 @@ There are several things to configure:
 * index.js
   * MAIN_ACCOUNT_MNEMONIC - your account mnemonic (each word is space separated).
   * MAIN_ACCOUNT_ADDRESS - your account address.
-  * PINATA_TOKEN - your Pinata JWT token. You can get it from [Pinata API Keys page](https://app.pinata.cloud/keys).
+  * PINATA_TOKEN - your Pinata JWT token. You can get it from [Pinata API Keys page](https://app.pinata.cloud/keys). Set it only if you are using Pinata as pinning a service.
+  * WEB3STORAGE_TOKEN - your web3.storage JWT token. You can get it from [web3.storage API Keys page](https://web3.storage/tokens). Set it only if you are using web3.storage as pinning a service.
+  * pinningService - set it to either `pinningServices.PINATA` or `pinningServices.WEB3STORAGE`. Default value is `pinningServices.PINATA`
   * noPinRun - set to true to mint all assets by using creator's address as reserve address.
   * dryRun - only outputs to console. Handy to check if everything is working fine.
   * assetsCount - total assets count to be minted. Used to generate sequence numbers of equal length (000001, 000002, 010000, etc.).

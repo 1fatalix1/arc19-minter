@@ -9,6 +9,7 @@ const cid = require('cids');
 let encoder = new TextEncoder();
 let mainPath = path.resolve(__dirname);
 let assetsPath = path.join(mainPath, 'assetsImages');
+let Web3Storage = require('web3.storage')
 
 //select the correct algorand network to use
 let network = 'testnet';
@@ -22,23 +23,33 @@ let algodClient = new algosdk.Algodv2(
 const MAIN_ACCOUNT_MNEMONIC = ""
 const MAIN_ACCOUNT_ADDRESS = ""
 const PINATA_TOKEN = ""
+const WEB3STORAGE_TOKEN = ""
 
 // does not pin uses creators address as reserve
-let noPinRun = true;
+let noPinRun = false;
 // does not mint just logs output
-let dryRun = true;
+let dryRun = false;
 
 let assetsCount = 9000;
 let assetQuantity = 1;
+//pinning service
+const pinningServices = {
+    PINATA: 'pinata',
+    WEB3STORAGE: 'web3.storage'
+}
+const pinningService = pinningServices.PINATA;
 
 var start = async function () {
+    let template = '';
+    if (pinningService === pinningServices.PINATA) template = conf.ARC19_TEMPLATE_PINATA;
+    if (pinningService === pinningServices.WEB3STORAGE) template = conf.ARC19_TEMPLATE_WEB3STORAGE;
     let mainAccountMnemonic = algosdk.mnemonicToSecretKey(
         MAIN_ACCOUNT_MNEMONIC
     );
 
     let files = fs.readdirSync(assetsPath);
-    let images = files.filter(x=>x.endsWith('.png'));
-    let jsons = files.filter(x=>x.endsWith('.json'));
+    let images = files.filter(x => x.endsWith('.png'));
+    let jsons = files.filter(x => x.endsWith('.json'));
     for (let indexFile = 1; indexFile <= images.length; indexFile++) {
         let filePathImage = path.join(assetsPath, images[indexFile - 1]);
         let filePathJson = path.join(assetsPath, jsons[indexFile - 1]);
@@ -71,7 +82,7 @@ var start = async function () {
             }
             let tx = await mintAsset(MAIN_ACCOUNT_ADDRESS, arc69,
                 assetName, assetUnitName,
-                conf.ARC19_TEMPLATE, assetQuantity, MAIN_ACCOUNT_ADDRESS, reserve);
+                template, assetQuantity, MAIN_ACCOUNT_ADDRESS, reserve);
 
             let txSigned = tx.signTxn(mainAccountMnemonic.sk);
             try {
@@ -123,26 +134,40 @@ async function mintAsset(from, arc69, assetName, unitName, assetURL, total, mana
 }
 
 async function pin(filename, path) {
-    var data = new FormData();
-    data.append('file', fs.createReadStream(path), { filename: `${filename}.png` });
-    data.append('pinataOptions', '{"cidVersion": 0}');
-    data.append('pinataMetadata', `{"name": "${filename}.png"}`);
+    if (pinningService === pinningServices.PINATA) {
+        var data = new FormData();
+        data.append('file', fs.createReadStream(path), { filename: `${filename}.png` });
+        data.append('pinataOptions', '{"cidVersion": 0}');
+        data.append('pinataMetadata', `{"name": "${filename}.png"}`);
 
-    var config = {
-        method: 'post',
-        url: 'https://api.pinata.cloud/pinning/pinFileToIPFS',
-        headers: {
-            'Authorization': 'Bearer ' + PINATA_TOKEN,
-            ...data.getHeaders()
-        },
-        data: data
-    };
-    try {
-        const resPost = await axios(config);
-        console.log(resPost.data);
-        return resPost.data.IpfsHash;
-    } catch (err) {
-        console.log(err)
+        var config = {
+            method: 'post',
+            url: 'https://api.pinata.cloud/pinning/pinFileToIPFS',
+            headers: {
+                'Authorization': 'Bearer ' + PINATA_TOKEN,
+                ...data.getHeaders()
+            },
+            data: data
+        };
+        try {
+            const resPost = await axios(config);
+            console.log(resPost.data);
+            return resPost.data.IpfsHash;
+        } catch (err) {
+            console.log(err)
+        }
+    } else if (pinningService === pinningServices.WEB3STORAGE) {
+        const storage = new Web3Storage.Web3Storage({ token: WEB3STORAGE_TOKEN })
+        const pathFiles = await Web3Storage.getFilesFromPath(path);
+        try {
+            const cid = await storage.put(pathFiles, {wrapWithDirectory: false, name: filename})
+            console.log('Content added with CID:', cid)
+            return cid
+        } catch (err) {
+            console.log(err)
+        }
+    } else {
+        throw ('No IPFS Provider selected!');
     }
 }
 
