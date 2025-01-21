@@ -11,8 +11,8 @@ const INDEXER_TOKEN_TESTNET="";
 const INDEXER_ENDPOINT_TESTNET="https://testnet-idx.algonode.cloud";
 const INDEXER_PORT_TESTNET=443;
 
-const ASSET_NAME = "R4V3N";
-const ASSET_UNIT_NAME = "RVT";
+const ASSET_NAME = "Dude";
+const ASSET_UNIT_NAME = "DUDE";
 
 const ARC19_TEMPLATE_PINATA = "template-ipfs://{ipfscid:0:dag-pb:reserve:sha2-256}"
 const ARC19_TEMPLATE_WEB3STORAGE = "template-ipfs://{ipfscid:1:raw:reserve:sha2-256}"
