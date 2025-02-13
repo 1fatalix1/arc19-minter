@@ -1,6 +1,9 @@
 {
-  "standard": "arc69",
-  "description": "Dudes is a fun NFT project on Algorand, featuring 999 unique pieces that portray the laid-back, slightly clueless vibe of Algo Alex's friend.",
+  "name": "Unrevealed",
+  "description": "PUT_YOUR_COLLECTION_DESCRIPTION_HERE",
+  "standard": "arc3",
+  "image": "ipfs://PUT_YOUR_PINNED_IMAGE_CID_HERE",
+  "image_mimetype": "image/png",
   "properties": {
     "Status": "Unrevealed"
   }

@@ -37,12 +37,11 @@ const pinningServices = {
 const pinningService = pinningServices.PINATA; // edit this
 
 const UNREVEALED_COLLECTION = true; // edit this
-const UNREVEALED_IMAGE_CID = "QmVQubGnUDC8ErLpqjy2XBC1sDjUBKexiV6mtmzc5x8Aa5"; // edit this
-const UNREVEALED_ARC69 = require(path.join(mainPath, "unrevealed.json")); // edit this
+const UNREVEALED_ARC3_CID = "QmVQubGnUDC8ErLpqjy2XBC1sDjUBKexiV6mtmzc5x8Aa5"; // edit this
 const RESULTS_FILE_NAME = "results.json"; // edit this
 
-// minter mode can be either combineMetadata, create, pin or update
-let minterMode = "combineMetadata"; // edit this
+// minter mode can be either combineMetadata, create, pinImage, pinArc3 or update
+let minterMode = "pinArc3"; // edit this
 // does not pin uses creators address as reserve
 let noPinRun = true; // edit this
 // does not mint just logs output
@@ -149,7 +148,6 @@ var start = async function () {
       results.push(result);
       let filePathImage = path.join(assetsPath, images[indexFile - 1]);
       let filePathJson = path.join(assetsPath, jsons[indexFile - 1]);
-      let arc69 = undefined;
 
       let assetSeq = "#";
       assetSeq += addZeros(
@@ -169,39 +167,32 @@ var start = async function () {
       console.log("Asset Name Length: " + assetName.length);
 
       if (UNREVEALED_COLLECTION === true) {
-        if (UNREVEALED_IMAGE_CID === undefined) {
+        if (UNREVEALED_ARC3_CID === undefined) {
           console.log(
             "Configuration Error: UNREVEALED_IMAGE_CID is required when UNREVEALED_COLLECTION is set to true. Please set a valid CID in the configuration."
           );
           process.exit(1);
         }
-        if (UNREVEALED_ARC69 === undefined) {
-          console.log(
-            "Configuration Error: UNREVEALED_ARC69 data is required when UNREVEALED_COLLECTION is set to true. Please check if unrevealed.json exists and contains valid metadata."
-          );
-          process.exit(1);
-        }
-        arc69 = UNREVEALED_ARC69;
-        const reserve = algosdk.encodeAddress(
-          multihash.decode(new cid(UNREVEALED_IMAGE_CID).multihash).digest
-        );
-        console.log("Unrevealed reserve address: " + reserve);
-      } else {
-        arc69 = require(filePathJson);
       }
-      console.log("ARC69 data: " + JSON.stringify(arc69, null, 2));
 
       let reserve = noPinRun === true ? MAIN_ACCOUNT_ADDRESS : undefined;
-      result.ipfsHash = undefined;
-      result.reserve = reserve;
+      result.ipfsHashImage = undefined;
+      result.reserveImage = undefined;
+      result.ipfsHashArc3 = undefined;
+      result.reserveArc3 = reserve;
       if (UNREVEALED_COLLECTION === true) {
         reserve = algosdk.encodeAddress(
-          multihash.decode(new cid(UNREVEALED_IMAGE_CID).multihash).digest
+          multihash.decode(new cid(UNREVEALED_ARC3_CID).multihash).digest
         );
+        result.ipfsHashArc3 = UNREVEALED_ARC3_CID;
+        result.reserveArc3 = reserve;
+        console.log("Unrevealed reserve address: " + reserve);
       } else {
+        let arc3Json = require(filePathJson);
+        console.log("ARC3 data: " + JSON.stringify(arc3Json, null, 2));
         if (noPinRun === false) {
-          let ipfsHash = await pin(assetUnitName, filePathImage);
-          if (ipfsHash === undefined) {
+          let ipfsHashImage = await pin(assetUnitName, filePathImage, "png");
+          if (ipfsHashImage === undefined) {
             console.log(
               "Error pinning image! Saving current work and stopping..."
             );
@@ -212,15 +203,39 @@ var start = async function () {
             process.exit(1);
           }
           reserve = algosdk.encodeAddress(
-            multihash.decode(new cid(ipfsHash).multihash).digest
+            multihash.decode(new cid(ipfsHashImage).multihash).digest
           );
-          result.ipfsHash = ipfsHash;
-          result.reserve = reserve;
+          result.ipfsHashImage = ipfsHashImage;
+          result.reserveImage = reserve;
+
+          arc3Json.image = `ipfs://${result.ipfsHashImage}`;
+
+          fs.writeFileSync(
+            filePathJson,
+            JSON.stringify(arc3Json, null, 2)
+          );
+
+          let ipfsHashArc3 = await pin(assetUnitName, filePathJson, "json");
+          if (ipfsHashArc3 === undefined) {
+            console.log(
+              "Error pinning arc3! Saving current work and stopping..."
+            );
+            fs.writeFileSync(
+              path.join(mainPath, RESULTS_FILE_NAME),
+              JSON.stringify(results, null, 2)
+            );
+            process.exit(1);
+          }
+          reserve = algosdk.encodeAddress(
+            multihash.decode(new cid(ipfsHashArc3).multihash).digest
+          );
+          result.ipfsHashArc3 = ipfsHashArc3;
+          result.reserveArc3 = reserve;
         }
       }
       let tx = await createAssetCreateTransaction(
         MAIN_ACCOUNT_ADDRESS,
-        arc69,
+        undefined,//TODO add option to save arc69
         assetName,
         assetUnitName,
         template,
@@ -271,10 +286,10 @@ var start = async function () {
     );
 
     process.exit();
-  } else if (minterMode === "pin") {
-    console.log("Minter running in pin mode");
+  } else if (minterMode === "pinImage") {
+    console.log("Minter running in pin image mode");
     console.log(
-      `It will use ${RESULTS_FILE_NAME} created in create mode to update it with IPFS hash and reserve address for each asset.`
+      `It will use ${RESULTS_FILE_NAME} created in create mode to update it with IPFS hash and reserve address for each asset's image data.`
     );
     console.log(
       `Minter running with assetStartOffset: ${assetStartOffset} and assetEndOffset ${assetEndOffset} meaning it will start processing from asset number ${assetStartOffset} to ${assetEndOffset}.`
@@ -299,11 +314,11 @@ var start = async function () {
       let filePathImage = result.filePathImage;
 
       let reserve = noPinRun === true ? MAIN_ACCOUNT_ADDRESS : undefined;
-      result.ipfsHash = undefined;
-      result.reserve = reserve;
+      result.ipfsHashImage = undefined;
+      result.reserveImage = reserve;
       if (noPinRun === false) {
         let assetUnitName = path.basename(filePathImage, ".png");
-        let ipfsHash = await pin(assetUnitName, filePathImage);
+        let ipfsHash = await pin(assetUnitName, filePathImage, "png");
         if (ipfsHash === undefined) {
           console.log(
             "Error pinning image! Saving current work and stopping..."
@@ -317,8 +332,65 @@ var start = async function () {
         reserve = algosdk.encodeAddress(
           multihash.decode(new cid(ipfsHash).multihash).digest
         );
-        result.ipfsHash = ipfsHash;
-        result.reserve = reserve;
+        result.ipfsHashImage = ipfsHash;
+        result.reserveImage = reserve;
+      }
+    }
+
+    fs.writeFileSync(
+      path.join(mainPath, RESULTS_FILE_NAME),
+      JSON.stringify(results, null, 2)
+    );
+
+    process.exit();
+  } else if (minterMode === "pinArc3") {
+    console.log("Minter running in pin arc3 mode");
+    console.log(
+      `It will use ${RESULTS_FILE_NAME} created in create mode to update it with IPFS hash and reserve address for each asset's arc3 data.`
+    );
+    console.log(
+      `Minter running with assetStartOffset: ${assetStartOffset} and assetEndOffset ${assetEndOffset} meaning it will start processing from asset number ${assetStartOffset} to ${assetEndOffset}.`
+    );
+    if (noPinRun) {
+      console.log(
+        `Minter running with noPinRun: true, meaning it won't pin any images and will use the creator's ${MAIN_ACCOUNT_ADDRESS} address as reserve.`
+      );
+    } else {
+      console.log(
+        `Minter running with noPinRun: false, meaning it will pin images and use the pinned IPFS hash as reserve. It will use the ${pinningService} service for pinning. It will save both the IPFS hash and reserve address in ${RESULTS_FILE_NAME}.`
+      );
+    }
+
+    let results = require(path.join(mainPath, RESULTS_FILE_NAME));
+    for (
+      let indexFile = assetStartOffset;
+      indexFile <= assetEndOffset;
+      indexFile++
+    ) {
+      let result = results[indexFile - 1];
+      let filePathJson = result.filePathJson;
+
+      let reserve = noPinRun === true ? MAIN_ACCOUNT_ADDRESS : undefined;
+      result.ipfsHashArc3 = undefined;
+      result.reserveArc3 = reserve;
+      if (noPinRun === false) {
+        let assetUnitName = path.basename(filePathJson, ".json");
+        let ipfsHash = await pin(assetUnitName, filePathJson, "json");
+        if (ipfsHash === undefined) {
+          console.log(
+            "Error pinning image! Saving current work and stopping..."
+          );
+          fs.writeFileSync(
+            path.join(mainPath, RESULTS_FILE_NAME),
+            JSON.stringify(results, null, 2)
+          );
+          process.exit(1);
+        }
+        reserve = algosdk.encodeAddress(
+          multihash.decode(new cid(ipfsHash).multihash).digest
+        );
+        result.ipfsHashArc3 = ipfsHash;
+        result.reserveArc3 = reserve;
       }
     }
 
@@ -354,14 +426,12 @@ var start = async function () {
       indexFile++
     ) {
       let result = results[indexFile - 1];
-      let filePathJson = result.filePathJson;
       let assetIndex = BigInt(result.assetIndex);
-      let arc69 = require(filePathJson);
 
       let tx = await createAssetConfigTransaction(
         assetIndex,
-        arc69,
-        result.reserve,
+        undefined,//TODO add option to save arc69
+        result.reserveArc3,
         MAIN_ACCOUNT_ADDRESS
       );
 
@@ -468,7 +538,10 @@ async function createAssetConfigTransaction(
   reserve,
   manager
 ) {
-  const note = encoder.encode(JSON.stringify(arc69));
+  let note = undefined;
+  if (arc69 !== undefined) {
+    note = encoder.encode(JSON.stringify(arc69));
+  }
 
   const suggestedParams = await algodClient.getTransactionParams().do();
   const txn = algosdk.makeAssetConfigTxnWithSuggestedParamsFromObject({
@@ -484,7 +557,7 @@ async function createAssetConfigTransaction(
   return txn;
 }
 
-async function pin(filename, path) {
+async function pin(filename, path, extension) {
   if (!fs.existsSync(path)) {
     console.log(`File Error: Image file not found at path: ${path}`);
     return undefined;
@@ -493,12 +566,12 @@ async function pin(filename, path) {
   if (pinningService === pinningServices.PINATA) {
     var data = new FormData();
     data.append("file", fs.createReadStream(path), {
-      filename: `${filename}.png`,
+      filename: `${filename}.${extension}`,
     });
     data.append("pinataOptions", '{"cidVersion": 0}');
     data.append(
       "pinataMetadata",
-      `{"name": "${filename}.png", "keyvalues": {"company": "${COMPANY}"}}`
+      `{"name": "${filename}.${extension}", "keyvalues": {"company": "${COMPANY}"}}`
     );
 
     var config = {

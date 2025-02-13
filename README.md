@@ -57,7 +57,10 @@ There are several things to configure:
     <strong>By default it uses `.env` file to get the data. See instructions in previous section.</strong>
   - COMPANY - Set your own company name that will be used when using pinata pinning service.
   - pinningService - set it to either `pinningServices.PINATA` or `pinningServices.WEB3STORAGE`. Default value is `pinningServices.PINATA`
-  - minterMode - can be either `combineMetadata`, `create`, `pin` or `update`
+  - UNREVEALED_COLLECTION - if set to true you will need to pin the image for unrevealed state and use that CID in your image property of your unreveales.json ARC3 metadata file. The sample file can be found in a root of the solution. Then you will need to pin that json file and the resulting CID has to be pasted into UNREVEALED_ARC3_CID variable (see below).
+  - UNREVEALED_ARC3_CID - the resulting CID of pinning your fully comleted ARC3 metadata json file that has image property populated with CID obtained from pinning your image file. 
+  - RESULTS_FILE_NAME - name of the results json file containing output from each minting stage.
+  - minterMode - can be either `combineMetadata`, `create`, `pinImage`, `pinArc3` or `update`
   - noPinRun - set to true to mint all assets without pinning images, by using creator's address as reserve address.
   - dryRun - Simulates blockchain transactions and only outputs to console. Handy to check if everything is working fine.
   - assetsCount - total assets count to be minted. Used to generate sequence numbers of equal length (000001, 000002, 010000, etc.).
@@ -65,7 +68,7 @@ There are several things to configure:
   - assetStartOffset - starting asset number to use in case you need to restart your process from specific number.
   - assetEndOffset - ending asset number to use in case you need to restart your process up to a specific number.
 
-All your images will have to be copied to assetsImages folder and need to have associated arc69 json file.
+All your images will have to be copied to assetsImages folder and need to have associated arc3 json file.
 
 ```bash
 assetsImages/
@@ -77,8 +80,10 @@ assetsImages/
 ```
 
 The tool will iterate through assetsImages files and attempt to pin each image to your selected pinning service.
+The tool will then update respective ARC3 json file with image cid.
+The tool will then iterate through assetsImages files and attempt to pin each ARC3 json to your selected pinning service.
 
-Next after obtaining a valid CID it will attempt to mint an asset using that CID and json file arc69 metadata.
+Next after obtaining a valid CID it will attempt to mint an asset using that CID.
 
 ## Different modes by using `minterMode` variable
 
@@ -100,9 +105,17 @@ The minter supports four different modes of operation:
      - Reserve addresses
      - File paths
 
-3. `pin`
+3. `pinImage`
 
    - Used to pin images to IPFS without minting
+   - Updates `results.json` with IPFS hashes and reserve addresses
+   - Updates each respective ARC3 json file with CID obtaine from pinning service
+   - Helpful when separating pinning and minting into separate steps
+   - Can recover from failed pinning attempts
+
+3. `pinArc3`
+
+   - Used to pin ARC3 metadata to IPFS without minting
    - Updates `results.json` with IPFS hashes and reserve addresses
    - Helpful when separating pinning and minting into separate steps
    - Can recover from failed pinning attempts
