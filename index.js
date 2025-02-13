@@ -41,7 +41,7 @@ const UNREVEALED_ARC3_CID = "QmVQubGnUDC8ErLpqjy2XBC1sDjUBKexiV6mtmzc5x8Aa5"; //
 const RESULTS_FILE_NAME = "results.json"; // edit this
 
 // minter mode can be either combineMetadata, create, pinImage, pinArc3 or update
-let minterMode = "pinArc3"; // edit this
+let minterMode = "combineMetadata"; // edit this
 // does not pin uses creators address as reserve
 let noPinRun = true; // edit this
 // does not mint just logs output
